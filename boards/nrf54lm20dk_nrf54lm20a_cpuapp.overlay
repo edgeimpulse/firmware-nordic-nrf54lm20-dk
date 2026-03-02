@@ -1,0 +1,67 @@
+/*
+ * Copyright (c) 2023 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c22 {
+    status = "okay";
+    pinctrl-0 = <&i2c22_default>;
+    pinctrl-1 = <&i2c22_sleep>;
+    pinctrl-names = "default", "sleep";
+    iis2dlpc: iis2dlpc@19{
+        compatible = "st,iis2dlpc";
+        status = "okay";
+        reg = < 0x19 >;
+    };
+};
+
+&pinctrl {
+    /omit-if-no-ref/ i2c22_default: i2c22_default {
+        group1  {
+            psels = <NRF_PSEL(TWIM_SCL, 1, 11)>,
+                    <NRF_PSEL(TWIM_SDA, 1, 12)>;
+        };
+    };
+
+    /omit-if-no-ref/ i2c22_sleep: i2c22_sleep {
+        group1  {
+            psels = <NRF_PSEL(TWIM_SCL, 1, 11)>,
+                    <NRF_PSEL(TWIM_SDA, 1, 12)>;
+            low-power-enable;
+        };
+    };
+};
+
+&mx25r64 {
+    status = "okay";
+};
+
+/ {
+
+    chosen {
+        nordic,pm-ext-flash = &mx25r64;
+    };
+
+	// specify axon profiling gpio
+	axon_profiling_gpios {
+		compatible = "gpio-leds"; // profiling gpio acts just like an led.
+		axon_profiling_gpio0: axon_profiling_gpio_0 {
+			gpios = <&gpio1 15 GPIO_ACTIVE_HIGH>;
+			label = "Axon Profiling GPIO 0";
+		};
+	};
+	aliases {
+		axonprofilinggpio0 = &axon_profiling_gpio0;
+	};
+};
+
+// Include Axons
+&global_peripherals {
+	axons: axons@56000 {
+		compatible = "nordic,axons";
+		reg = <0x56000 0x1000>;
+		interrupts = <86 NRF_DEFAULT_IRQ_PRIORITY>;
+		status = "okay";
+	};
+};
