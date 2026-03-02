@@ -6,4 +6,4 @@ bootloader/
 modules/
 tools/
 *.hex
-firwmare-sdk/
+firmware-sdk
