@@ -58,8 +58,8 @@
 
 // Include Axons
 &global_peripherals {
-	axons: axons@56000 {
-		compatible = "nordic,axons";
+	axon: axon@56000 {
+		compatible = "nordic,axon";
 		reg = <0x56000 0x1000>;
 		interrupts = <86 NRF_DEFAULT_IRQ_PRIORITY>;
 		status = "okay";
