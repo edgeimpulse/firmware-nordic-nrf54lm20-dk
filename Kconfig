@@ -4,7 +4,7 @@
 
 source "Kconfig.zephyr"
 
-menu "Edge Impulse nRF54L15DK example"
+menu "Edge Impulse nRF54LM20DK example"
 
 config EI_INFERENCE_THREAD_STACK
     int "Inference thread stack size"

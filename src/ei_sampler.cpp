@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 EdgeImpulse Inc.
+ * Copyright (c) 2026 EdgeImpulse Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -237,7 +237,7 @@ bool ei_sampler_start_sampling(void *v_ptr_payload, starter_callback ei_sample_s
             ei_printf("Failed to read first page (%d)\n", j);
         }
         else {
-        LOG_ERR("%s", str_unknown_serial_channel);
+            LOG_ERR("%s", str_unknown_serial_channel);
         }
         ei_free(page_buffer);
         return false;
@@ -302,7 +302,7 @@ bool ei_sampler_start_sampling(void *v_ptr_payload, starter_callback ei_sample_s
     if (dev->get_serial_channel() == UART) {
         LOG_DBG("UART COM: need to upload over UART");
         LOG_DBG("Not uploading file, not connected to WiFi. Used buffer, from=0, to=%u.", my_size);
-        ei_printf("Done sampling, total bytes collected: %u\n", samples_required);
+        ei_printf("Done sampling, total bytes collected: %u\n", samples_required*sample_size);
         ei_printf("[1/1] Uploading file to Edge Impulse...\n");
         ei_printf("Not uploading file, not connected to WiFi. Used buffer, from=0, to=%u.\n", my_size);
         ei_printf("OK\n");

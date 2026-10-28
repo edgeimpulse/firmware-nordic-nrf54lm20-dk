@@ -7,6 +7,18 @@ set(EXTRA_CONF_FILE
         ./ei-model/conf_overlay.conf
 )
 
+# Select the sensor board (X-NUCLEO-IKS01A3 or IKS02A1, wired directly, not as a
+# shield). Must be set before find_package(Zephyr) so the devicetree overlay is used.
+if(USE_IKS01A3)
+    message(STATUS "Using IKS01A3")
+    set(EI_SENSOR_DIR src/sensors/iks01a3)
+    list(APPEND EXTRA_DTC_OVERLAY_FILE ${CMAKE_CURRENT_SOURCE_DIR}/boards/iks01a3.overlay)
+else()
+    message(STATUS "Using IKS02A1")
+    set(EI_SENSOR_DIR src/sensors/iks02a1)
+    list(APPEND EXTRA_DTC_OVERLAY_FILE ${CMAKE_CURRENT_SOURCE_DIR}/boards/iks02a1.overlay)
+endif()
+
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project("firmware-nordic-nrf54lm20-dk"
           VERSION 0.1)
@@ -31,6 +43,10 @@ add_subdirectory(firmware-sdk)
 add_subdirectory(src/inference)
 add_subdirectory(src/sensors)
 add_subdirectory(src)
+
+target_sources(app PRIVATE
+    ${EI_SENSOR_DIR}/ei_accelerometer.cpp
+    ${EI_SENSOR_DIR}/ei_inertial.cpp)
 
 # Include directories (everything in the SDK is already included here)
 target_include_directories(app PRIVATE .)

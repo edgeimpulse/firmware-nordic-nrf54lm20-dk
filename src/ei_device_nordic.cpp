@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 EdgeImpulse Inc.
+ * Copyright (c) 2026 EdgeImpulse Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,10 +19,10 @@
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/uart.h>
+#include <zephyr/drivers/hwinfo.h>
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include "ei_device_nordic.h"
-// #include "flash_memory.h"
 #include "ei_at_handlers.h"
 #include "edge-impulse-sdk/porting/ei_classifier_porting.h"
 #include "edge-impulse-sdk/dsp/ei_utils.h"
@@ -31,10 +31,10 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(ei_device_nordic, LOG_LEVEL_DBG);
 
-/* The devicetree node identifier for the "led0" alias. */
-#define LED0_NODE DT_ALIAS(led1)
+/* The devicetree node identifier for the "led1" alias. */
+#define LED1_NODE DT_ALIAS(led1)
 
-static const struct gpio_dt_spec led = GPIO_DT_SPEC_GET(LED0_NODE, gpios);
+static const struct gpio_dt_spec led = GPIO_DT_SPEC_GET(LED1_NODE, gpios);
 
 using namespace std;
 
@@ -165,8 +165,7 @@ static void sampler_work_handler(struct k_work *work)
 
 EiDeviceInfo* EiDeviceInfo::get_device(void)
 {
-    // static EiFlashMemory memory(sizeof(EiConfig));
-    static EiDeviceRAM<4096,3> memory(sizeof(EiConfig));
+    static EiDeviceRAM<1024,80> memory(sizeof(EiConfig));
     static EiDeviceNRF dev(&memory);
 
     return &dev;
@@ -191,7 +190,7 @@ EiDeviceNRF::EiDeviceNRF(EiDeviceMemory* mem)
         LOG_ERR("Cannot configure LED (err: %d)", ret);
     }
 
-    device_type = "NRF54L15DK   ";
+    device_type = "NRF_NRF54LM20_DK";
 }
 
 EiDeviceNRF::~EiDeviceNRF()
@@ -211,10 +210,26 @@ void EiDeviceNRF::init_device_id(void)
         addr.a.val[5], addr.a.val[4], addr.a.val[3],
         addr.a.val[2], addr.a.val[1], addr.a.val[0]);
 
-    LOG_INF("Setting ID = %s", temp);
-
-    device_id = string(temp);
     mac_address = string(temp);
+
+    // device ID comes from the unique MCU ID (FICR DEVICEID)
+    uint8_t id[8];
+    char id_str[3 * sizeof(id)];
+
+    ssize_t len = hwinfo_get_device_id(id, sizeof(id));
+    if (len > 0) {
+        char *p = id_str;
+        for (ssize_t i = 0; i < len; i++) {
+            p += snprintf(p, id_str + sizeof(id_str) - p, i ? ":%02X" : "%02X", id[i]);
+        }
+        device_id = string(id_str);
+    }
+    else {
+        LOG_ERR("hwinfo_get_device_id failed (err: %d), using MAC", (int)len);
+        device_id = string(temp);
+    }
+
+    LOG_INF("Setting ID = %s", device_id.c_str());
     save_config();
 }
 
@@ -232,7 +247,7 @@ string EiDeviceNRF::get_mac_address(void)
 }
 
 bool EiDeviceNRF::start_sample_thread(void (*sample_read_cb)(void), float sample_interval_ms)
-{
+{    
     this->sample_read_callback = sample_read_cb;
 #if MULTI_FREQ_ENABLED == 1
     this->actual_timer = 0;

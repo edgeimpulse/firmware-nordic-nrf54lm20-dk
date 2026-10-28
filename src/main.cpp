@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 EdgeImpulse Inc.
+ * Copyright (c) 2026 EdgeImpulse Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,15 +19,19 @@
 #include "ei_device_nordic.h"
 #include "edge-impulse-sdk/porting/ei_classifier_porting.h"
 #include "inference/ei_run_impulse.h"
-#include "sensors/ei_inertial_sensor.h"
+#include "sensors/ei_inertial.h"
+#include "sensors/ei_accelerometer.h"
+#include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/logging/log.h>
 #include <nrfx_clock.h>
 #include <zephyr/kernel.h>
-#include <zephyr/bluetooth/bluetooth.h>
+//#include <zephyr/bluetooth/bluetooth.h>
 
 #define LOG_MODULE_NAME main
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
+
+static const struct gpio_dt_spec led0 = GPIO_DT_SPEC_GET(DT_ALIAS(led0), gpios);
 
 int main(void)
 {
@@ -43,27 +47,30 @@ int main(void)
         LOG_ERR("Init uart on board error occured\r\n");
     }
 
-    /* Setup the accelerometer sensor */
+    at = ei_at_init();
+
+    /* Setup the inertial sensor */
     if(ei_inertial_init() == false) {
-        LOG_ERR("Light sensor communication error occured");
+        LOG_ERR("[ERR] Can't init inertial sensor");
+        if(gpio_is_ready_dt(&led0) && gpio_pin_configure_dt(&led0, GPIO_OUTPUT_ACTIVE) == 0) {
+            gpio_pin_set_dt(&led0, 1);
+        }
     }
 
-    // NOTE: This is required so the device ID that is based on BLE MAC is properly initialized
-    // err = bt_enable(NULL);
-    // if (err) {
-    //     LOG_ERR("BLE init failed (err %d)\n", err);
-    // }
-
-    // we have to do this later because the BLE stack is not available on boot
-    // dev->init_device_id();
+    /* Setup the accelerometer sensor */
+    if(ei_accelerometer_init() == false) {
+        LOG_ERR("[ERR] Can't init accelerometer sensor");
+        if(gpio_is_ready_dt(&led0) && gpio_pin_configure_dt(&led0, GPIO_OUTPUT_ACTIVE) == 0) {
+            gpio_pin_set_dt(&led0, 1);
+        }
+    }
 
     ei_printf("Hello from Edge Impulse\r\n"
               "Compiled on %s %s\r\n", __DATE__, __TIME__);
 
-    at = ei_at_init();
-
     at->print_prompt();
     LOG_INF("Entering infinite loop\n");
+    dev->init_device_id();
     while(1) {
         char data = uart_getchar();
 
